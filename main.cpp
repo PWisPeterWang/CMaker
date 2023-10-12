@@ -22,8 +22,8 @@ int main(int argc, const char *argv[])
 {
     // clang-format off
     general.add_options()("help", "print the help message")
-        ("operation", po::value<std::string>()->required(), "supported operations: new, add-library, add-submodule")
-        ("name", po::value<std::string>()->required(), "operand for the operation")
+        ("operation", po::value<std::string>()->required(), "1st positional argument. supported operations: new, add-library, add-submodule")
+        ("name", po::value<std::string>()->required(), "2nd positional argument. operand for the operation")
         ("version,v", "print the version string")
         ;
     
@@ -32,12 +32,12 @@ int main(int argc, const char *argv[])
         ("exe", "create a repo template based on executable project")
         ;
     adder_library.add_options()
-        ("path,L", po::value<std::string>(), "path to find the library")
-        ("inc,I", po::value<std::string>(), "path to find the headers")
+        ("path,L", po::value<std::string>(), "path to find the library, such as: thirdparty/mydep/lib")
+        ("inc,I", po::value<std::string>(), "path to find the header file, such as: thirdparty/mydep/dep.h")
         ;
     adder_module.add_options()
-        ("url,U", po::value<std::string>(), "url to submodule")
-        ("dir,D", po::value<std::string>()->default_value("thirdparty"), "directory where the submodule shall be init")
+        ("url,U", po::value<std::string>(), "url to submodule, such as: https://github.com/me/myrepo.git")
+        ("dir,D", po::value<std::string>()->default_value("thirdparty"), "directory where the submodule shall be initialized, default value is: thirdparty")
         ;
     // clang-format on
     pos_desc.add("operation", 1).add("name", 1);
@@ -90,16 +90,14 @@ int main(int argc, const char *argv[])
         }
         else
         {
-            fmt::print("invalid operation: {}\n", op);
-            std::cout << all;
-            return 1;
+            WARN("invalid operation: {}\n", op);
+            PrintUsageAndQuit(all, 1);
         }
     }
     else
     {
-        std::cout << "you didn't set any operation.\n";
-        std::cout << all;
-        return 1;
+        WARN("you didn't set any operation.");
+        PrintUsageAndQuit(all, 1);
     }
     return 0;
 }
