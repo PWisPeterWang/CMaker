@@ -43,14 +43,20 @@ mylib
 ```
 
 1. a `bench` directory for benchmarking, with pre-configured CMakeLists.txt and a sample benchmark source file.
-2. a `cmake_modules` directory for custom CMake modules. It is empty by default. You can add your own CMake modules here. When calling `cmaker add-library`, the library will be added to this directory.
+2. a `cmake_modules` directory for custom CMake modules. It is empty by default. You can add your own CMake modules here. When calling `cmaker add-library`, a `FindMyLib.cmake` file related to the library will be created under this directory, containing the common practice of how you can write a `FindXXX.cmake` module as an example (and it works).
 3. a `mylib` directory for the library source files. When calling `cmaker new` the library name will be the same as the project name. The directoy constains a header file `header.h` with default `GetVersionString` function.
 4. a `src` directory for the library source files. It contains a 'library.cpp' file with the implementation of the `GetVersionString` function.
 5. a `thirdparty` directory for third-party libraries. It is empty by default. You can add your own third-party libraries here. When calling `cmaker add-module`, the module will be downloaded through `git submodule add` and added to this directory.
 6. a `unit_test` directory for unit testing, with pre-configured CMakeLists.txt and a sample unit test source file.
-7. a `CMakeLists.txt` file for the project. It contains all the common CMake commands for a C/C++ project, such as, `add_library` or `add_executable` (when called with `cmaker new mylib --exe`), `install`, `enable_testing`, `include(CTest)`, etc.
+7. a root `CMakeLists.txt` file for the project. It contains all the common CMake commands for a C/C++ project, such as, `add_library` or `add_executable` (when called with `cmaker new mylib --exe`), `install`, `enable_testing`, `include(CTest)`, `include(CPack)`, etc.
 
-The pre-configured install commands for the new repo will by default install the `mylib` directory to the `${CMAKE_INSTALL_INCLUDEDIR}` as public headers, and the headers located under `src` will be considered as private headers. You can change the install commands in the `CMakeLists.txt` file to achieve more customization.
+The pre-configured install commands in the root CMakeLists.txt will by default install the `mylib` directory to the `${CMAKE_INSTALL_INCLUDEDIR}` as public headers, and the headers located under `src` will be considered as private headers. You can change the install commands in the `CMakeLists.txt` file to achieve more customization.
+
+Note that by default, the `CMakeLists.txt` file will install the `mylib` directory as a static library. If you want to install it as a shared library, you can add the `--shared` option when calling `cmaker new`. 
+
+Also note that by default, the package location will be under the `build/package` directoy after calling `cpack` under the `build` directory, and it will be packed as tarball in Linux and Zip archive in Windows. You can change the package location and packaging behavior by modifying the CPack section in the root `CMakeLists.txt` file.
+
+Another thing to note is that by default, the `header.h` contains your library's version string consisting from `MYLIB_VERSION_MAJOR`, `MYLIB_VERSION_MINOR` and `MYLIB_VERSION_PATCH` ('MYLIB' is the library name). The CPack section in the root `CMakeLists.txt` file will automatically set the package version to the version string. So that whenever you changes the version of you header, the package name will automatically change as well.
 
 The pre-configured unit test CMakeLists.txt will scan the `unit_test` directory for any `.cpp` source files and add them as unit test executables. It provides a CMake function that simplifies the code needed to add a unit test.
 You can add your own unit test source files to the `unit_test` directory and they will be automatically added to the unit test executables. For now, the `add_unit_test` function takes only 1 source file as argument. If you want to add more source files in a unit test executable, you would have to modify the `add_unit_test` function by yourself.
