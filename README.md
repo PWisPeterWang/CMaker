@@ -52,7 +52,8 @@ mylib
 
 The pre-configured install commands for the new repo will by default install the `mylib` directory to the `${CMAKE_INSTALL_INCLUDEDIR}` as public headers, and the headers located under `src` will be considered as private headers. You can change the install commands in the `CMakeLists.txt` file to achieve more customization.
 
-The pre-configured unit test CMakeLists.txt will scan the `unit_test` directory for any `.cpp` source files and add them as unit test executables. It provides a CMake function that simplifies the code needed to add a unit test. You can add your own unit test source files to the `unit_test` directory and they will be automatically added to the unit test executables. For now, the unit test takes only 1 source file as argument. If you want to add more source files in a unit test executable, you would have to modify the `add_unit_test` function by yourself.
+The pre-configured unit test CMakeLists.txt will scan the `unit_test` directory for any `.cpp` source files and add them as unit test executables. It provides a CMake function that simplifies the code needed to add a unit test.
+You can add your own unit test source files to the `unit_test` directory and they will be automatically added to the unit test executables. For now, the `add_unit_test` function takes only 1 source file as argument. If you want to add more source files in a unit test executable, you would have to modify the `add_unit_test` function by yourself.
 
 It also contains pre-configured `.gitignore`, `.clang-format` and `.clang-tidy` (stolen from fmtlib :p) files. You can modify them to suit your needs.
 
@@ -66,7 +67,7 @@ It also contains pre-configured `.gitignore`, `.clang-format` and `.clang-tidy` 
 
 ## Dependencies
 
-- Boost.program_options
+- [Boost](https://www.boost.org/) [program_options](https://www.boost.org/doc/libs/1_83_0/doc/html/program_options.html)
 - [fmtlib](https://fmt.dev)
 - [CMake](https://cmake.org)
 - [Ninja](https://github.com/ninja-build/ninja)
