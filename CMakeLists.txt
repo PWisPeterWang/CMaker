@@ -41,7 +41,6 @@ target_compile_definitions(cmaker PRIVATE "FMT_HEADER_ONLY")
 # Link to thirdparty libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE Boost::program_options)
 
-add_subdirectory(process_example)
 include(GNUInstallDirs)
 # Set up the installation 
 install(TARGETS ${PROJECT_NAME} 
