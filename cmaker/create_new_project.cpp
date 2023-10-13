@@ -12,11 +12,13 @@ enum class RepoType
 
 static RepoType repo_type = RepoType::STATIC;
 static std::string repo_name = "undefined";
+static std::string upper_name;
 
 static void CreateRepoDirs();
 static void WriteCMakeLists();
 static void WriteUnitTests();
 static void WriteBenchmark();
+static void WriteSrcAndHeader();
 
 void CreateNewProject()
 {
@@ -65,6 +67,7 @@ void CreateRepoDirs()
         WriteCMakeLists();
         WriteUnitTests();
         WriteBenchmark();
+        WriteSrcAndHeader();
 
         std::system("git init");
     }
@@ -73,54 +76,42 @@ void CreateRepoDirs()
 
 void WriteCMakeLists()
 {
-    std::string upper_name = ToUpper(repo_name);
+    upper_name = ToUpper(repo_name);
     std::ofstream cmakelist("CMakeLists.txt");
     cmakelist << "cmake_minimum_required(VERSION 3.21)\n\n"
-              << "project(" << repo_name << " LANGUAGES CXX C)\n\n"
+              << "project(" << repo_name << " LANGUAGES CXX C)\n\n";
+    cmakelist << "# edit the following settings as you desire\n"
               << "set(CMAKE_CXX_STANDARD 11)\n"
               << "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
               << "set(CMAKE_CXX_STANDARD_EXTENSION OFF)\n"
-              << "add_compile_options(-Wfatal-errors)\n\n"
-              << "list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)\n"
-              << "option(BUILD_TESTS \"build unit tests\" ON)\n"
-              << "option(BUILD_BENCHMARKS \"build benchmark tests\" OFF)\n"
+              << "add_compile_options(-Wfatal-errors)\n\n";
+    cmakelist << "# edit the following line to add your cmake modules\n"
+              << "list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)\n";
+    cmakelist << "# options flags to turn on/off unit tests and benchmarks\n"
+              << "option(BUILD_TESTS \"build unit tests\" OFF)\n"
+              << "option(BUILD_BENCHMARKS \"build benchmark tests\" OFF)\n";
+    cmakelist << "# edit the following line to add your dependencies\n"
               << "find_package(Threads REQUIRED)\n\n";
+    // for executable repo, scan the 'repo_name' dir to add all cpp files as it's SRCS
     if (RepoType::EXECUTABLE == repo_type)
     {
-        cmakelist << "add_executable(${PROEJCT_NAME} main.cpp)\n";
-        cmakelist << "target_include_directories(${PROJECT_SOURCE_DIR}/src)\n\n";
+        cmakelist << fmt::format("file(GLOB EXECUTABLE_SRC \"{}/*.cpp\")\n", repo_name)
+                  << "list(APPEND EXECUTABLE_SRC \"main.cpp\")\n"
+                     "add_executable(${PROJECT_NAME} ${EXECUTABLE_SRC})\n";
+        cmakelist << "target_include_directories(${PROJECT_NAME} PRIVATE\n    "
+                     "${PROJECT_SOURCE_DIR}/src)\n\n";
         std::ofstream helloworld("main.cpp");
         helloworld << "#include <iostream>\n\n"
                    << "int main(int argc, char** argv)\n{\n"
                    << "    std::cout << \"hello world!\" << std::endl;\n}\n";
     }
-    else
+    else // for library repo, scan the 'src' dir to add all cpp files as it's SRCS
     {
-        std::ofstream cppfile("src/library.cpp");
-        cppfile << fmt::format(R"(#include "header.h"
-constexpr const char *GetVersionString()
-{{
-#define XX(x) #x
-#define STRINGIFY(x) XX(x)
-    return STRINGIFY({0}_VERSION_MAJOR.{0}_VERSION_MINOR.{0}_VERSION_PATCH);
-#undef XX
-#undef STRINGIFY
-}}
-)",
-            upper_name);
-
-        std::ofstream header(fmt::format("{}/header.h", repo_name));
-        header << fmt::format(
-            R"(#pragma once
-#define {0}_VERSION_MAJOR 0
-#define {0}_VERSION_MINOR 0
-#define {0}_VERSION_PATCH 1
-constexpr const char* GetVersionString();
-)",
-            upper_name);
-
-        cmakelist << "add_library(${PROJECT_NAME} "
-                  << (repo_type == RepoType::SHARED ? "SHARED" : "STATIC") << " src/library.cpp)\n";
+        cmakelist << "file(GLOB LIBRARY_SRC \"src/*.cpp\")\n"
+                  << "add_library(${PROJECT_NAME} "
+                  << (repo_type == RepoType::SHARED ? "SHARED" : "STATIC")
+                  << " \"${LIBRARY_SRC}\")\n";
+        cmakelist << "# you may add more dependencies' header dir here\n";
         cmakelist << "target_include_directories(${PROJECT_NAME}\n"
                   << "    PUBLIC\n"
                   << "        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/" << repo_name << ">\n"
@@ -128,21 +119,26 @@ constexpr const char* GetVersionString();
                   << "    PRIVATE\n"
                   << "        ${PROJECT_SOURCE_DIR}/src)\n\n";
     }
+
     // link example
-    cmakelist << "target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)\n\n";
+    cmakelist << "# edit the following line to link your dependencies libraries\n"
+              << "target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)\n\n";
 
     // unit tests
+    cmakelist << "#if called with -DBUILD_TESTS the unit test targets will be enabled\n";
     cmakelist << "if(BUILD_TESTS)\n"
               << "    find_package(GTest REQUIRED)\n"
               << "    enable_testing()\n"
               << "    add_subdirectory(unit_test)\nendif()\n\n";
 
     // benchmark tests
+    cmakelist << "#if called with -DBUILD_BENCHMARKS the benchmark target will be enabled\n";
     cmakelist << "if(BUILD_BENCHMARKS)\n"
               << "    find_package(benchmark REQUIRED)\n"
               << "    add_subdirectory(bench)\nendif()\n\n";
 
     // install
+    cmakelist << "# install settings\n";
     cmakelist << "include(GNUInstallDirs)\n"
               << "install(TARGETS ${PROJECT_NAME}\n"
               << "    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}\n"
@@ -151,13 +147,18 @@ constexpr const char* GetVersionString();
     // install public headers if it's library repo
     if (RepoType::EXECUTABLE != repo_type)
     {
-        cmakelist << "set(PUBLIC_HEADER_DIR ${PROJECT_SOURCE_DIR}/" << repo_name << ")\n"
+        cmakelist << "# install public headers\n";
+        cmakelist << "set(PUBLIC_HEADER_DIR ${PROJECT_SOURCE_DIR}/" << repo_name
+                  << ")\n"
                   << "install(DIRECTORY ${PUBLIC_HEADER_DIR}\n"
                   << "    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}\n"
                   << "    FILES_MATCHING\n"
                   << "        PATTERN \"*.h\"\n"
                   << "        PATTERN \"*.hpp\"\n)\n";
-        cmakelist << fmt::format(R"=(file(STRINGS ${{PROJECT_SOURCE_DIR}}/{0}/header.h
+    }
+    // both library and executable repo support versioning
+    cmakelist << "# auto versioning reads from header.h to get versionstring\n";
+    cmakelist << fmt::format(R"=(file(STRINGS ${{PROJECT_SOURCE_DIR}}/{0}/header.h
     HEADER_CONTENTS REGEX "#define {1}_VERSION_.*")
 string(REGEX MATCH "#define {1}_VERSION_MAJOR ([0-9]*)" _ ${{HEADER_CONTENTS}})
 set({1}_VER_MAJOR ${{CMAKE_MATCH_1}})
@@ -171,9 +172,9 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${{{1}_VER_MAJOR}})
 set(CPACK_PACKAGE_VERSION_MINOR ${{{1}_VER_MINOR}})
 set(CPACK_PACKAGE_VERSION_PATCH ${{{1}_VER_PATCH}})
 )=",
-            repo_name, upper_name);
-    }
+        repo_name, upper_name);
     // cpack settings
+    cmakelist << "# cpack settings, edit the following to pack up as you desire\n";
     cmakelist << "if(UNIX)\n"
               << "    set(CPACK_GENERATOR \"TGZ\")\n"
               << "else()\n"
@@ -188,6 +189,8 @@ void WriteUnitTests()
 {
     std::ofstream unit_test("unit_test/CMakeLists.txt");
     unit_test << R"(set(LIBRARIES_FOR_TEST "") # put your library here
+# an easy way to add unit test
+# for now it supports only one src file as SOURCE
 function(add_unit_test CASE_TARGET SOURCE)
     add_executable(${CASE_TARGET} ${SOURCE})
     target_link_libraries(${CASE_TARGET} PRIVATE )";
@@ -284,4 +287,50 @@ BENCHMARK(BM_findPrimes)->Range(1, 100000);
 BENCHMARK_MAIN();
 )";
     INFO("benchmark example written complete!");
+}
+
+void WriteSrcAndHeader()
+{
+
+    // src file and header
+    // library repo's library.cpp will be located in 'src' dir
+    // executable repo's library.cpp will be located in 'repo_name' dir
+    auto cppfile_name =
+        fmt::format("{}/library.cpp", repo_type == RepoType::EXECUTABLE ? repo_name : "src");
+    std::ofstream cppfile(cppfile_name);
+    if (!cppfile)
+    {
+        ERROR("failed to open file: {}", cppfile_name);
+    }
+    cppfile << fmt::format(R"(#include "header.h"
+constexpr const char *GetVersionString()
+{{
+#define XX(x) #x
+#define STRINGIFY(x) XX(x)
+    return STRINGIFY({0}_VERSION_MAJOR.{0}_VERSION_MINOR.{0}_VERSION_PATCH);
+#undef XX
+#undef STRINGIFY
+}}
+)",
+        upper_name);
+
+    INFO("{} written complete!", cppfile_name);
+
+    // headers are always under the 'repo_name' dir
+    auto header_name = fmt::format("{}/header.h", repo_name);
+    std::ofstream header(header_name);
+    if (!header)
+    {
+        ERROR("failed to open file: {}", header_name);
+    }
+    header << fmt::format(
+        R"(#pragma once
+#define {0}_VERSION_MAJOR 0
+#define {0}_VERSION_MINOR 0
+#define {0}_VERSION_PATCH 1
+constexpr const char* GetVersionString();
+)",
+        upper_name);
+
+    INFO("{} written complete!", header_name);
 }
