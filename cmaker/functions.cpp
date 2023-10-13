@@ -84,7 +84,8 @@ THE SOFTWARE.
 void PrintUsageAndQuit(po::options_description &desc, int errc)
 {
     std::cout << std::endl << desc << std::endl;
-    std::cout << GetLicense() << '\n';
+    if (errc == 0)
+        std::cout << GetLicense() << '\n';
     exit(errc);
 }
 

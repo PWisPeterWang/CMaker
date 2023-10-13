@@ -15,8 +15,7 @@ void AddThirdpartyLibrary()
 {
     if (!vm.count("name"))
     {
-        WARN("missing library name for creating project!");
-        PrintUsageAndQuit(adder_library);
+        ERROR("missing library name for creating project!");
     }
     name = vm["name"].as<std::string>();
 
