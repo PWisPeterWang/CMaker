@@ -81,7 +81,7 @@ void WriteCMakeLists()
     cmakelist << "cmake_minimum_required(VERSION 3.21)\n\n"
               << "project(" << repo_name << " LANGUAGES CXX C)\n\n";
     cmakelist << "# edit the following settings as you desire\n"
-              << "set(CMAKE_CXX_STANDARD 11)\n"
+              << "set(CMAKE_CXX_STANDARD 17)\n"
               << "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
               << "set(CMAKE_CXX_STANDARD_EXTENSION OFF)\n"
               << "add_compile_options(-Wfatal-errors)\n\n";
@@ -96,14 +96,9 @@ void WriteCMakeLists()
     if (RepoType::EXECUTABLE == repo_type)
     {
         cmakelist << fmt::format("file(GLOB EXECUTABLE_SRC \"{}/*.cpp\")\n", repo_name)
-                  << "list(APPEND EXECUTABLE_SRC \"main.cpp\")\n"
-                     "add_executable(${PROJECT_NAME} ${EXECUTABLE_SRC})\n";
+                  << "add_executable(${PROJECT_NAME} ${EXECUTABLE_SRC})\n";
         cmakelist << "target_include_directories(${PROJECT_NAME} PRIVATE\n    "
-                     "${PROJECT_SOURCE_DIR}/src)\n\n";
-        std::ofstream helloworld("main.cpp");
-        helloworld << "#include <iostream>\n\n"
-                   << "int main(int argc, char** argv)\n{\n"
-                   << "    std::cout << \"hello world!\" << std::endl;\n}\n";
+                  << fmt::format("${{PROJECT_SOURCE_DIR}}/{})\n\n", repo_name);
     }
     else // for library repo, scan the 'src' dir to add all cpp files as it's SRCS
     {
@@ -148,8 +143,7 @@ void WriteCMakeLists()
     if (RepoType::EXECUTABLE != repo_type)
     {
         cmakelist << "# install public headers\n";
-        cmakelist << "set(PUBLIC_HEADER_DIR ${PROJECT_SOURCE_DIR}/" << repo_name
-                  << ")\n"
+        cmakelist << "set(PUBLIC_HEADER_DIR ${PROJECT_SOURCE_DIR}/" << repo_name << ")\n"
                   << "install(DIRECTORY ${PUBLIC_HEADER_DIR}\n"
                   << "    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}\n"
                   << "    FILES_MATCHING\n"
@@ -303,7 +297,7 @@ void WriteSrcAndHeader()
         ERROR("failed to open file: {}", cppfile_name);
     }
     cppfile << fmt::format(R"(#include "header.h"
-constexpr const char *GetVersionString()
+const char *GetVersionString()
 {{
 #define XX(x) #x
 #define STRINGIFY(x) XX(x)
@@ -315,6 +309,21 @@ constexpr const char *GetVersionString()
         upper_name);
 
     INFO("{} written complete!", cppfile_name);
+
+    if (RepoType::EXECUTABLE == repo_type)
+    {
+        std::ofstream helloworld(fmt::format("{}/main.cpp", repo_name));
+        if (!helloworld)
+        {
+            ERROR("failed to open file: {}/main.cpp", repo_name);
+        }
+        helloworld << "#include <iostream>\n"
+                   << "#include \"header.h\"\n\n"
+                   << "int main(int argc, char** argv)\n{\n"
+                   << fmt::format("    std::cout << \"hello {}! version:\"<< GetVersionString() << "
+                                  "std::endl;\n}}\n",
+                          repo_name);
+    }
 
     // headers are always under the 'repo_name' dir
     auto header_name = fmt::format("{}/header.h", repo_name);
@@ -328,7 +337,7 @@ constexpr const char *GetVersionString()
 #define {0}_VERSION_MAJOR 0
 #define {0}_VERSION_MINOR 0
 #define {0}_VERSION_PATCH 1
-constexpr const char* GetVersionString();
+const char* GetVersionString();
 )",
         upper_name);
 
