@@ -10,7 +10,7 @@ namespace po = boost::program_options;
 
 #define CMAKER_VERSION_MAJOR 0
 #define CMAKER_VERSION_MINOR 0
-#define CMAKER_VERSION_PATCH 1
+#define CMAKER_VERSION_PATCH 2
 
 #define COLORED(xx, id) "\033[1;" #id "m" xx "\033[0m"
 #define RED(xx) COLORED(xx, 31)
