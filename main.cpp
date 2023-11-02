@@ -22,9 +22,15 @@ int main(int argc, const char *argv[])
 {
     // clang-format off
     general.add_options()("help", "print the help message")
-        ("operation", po::value<std::string>()->required(), "1st positional argument. supported operations: new, add-library, add-submodule")
-        ("name", po::value<std::string>()->required(), "2nd positional argument. operand for the operation")
+        ("operation", po::value<std::string>()->required(), 
+            "1st positional argument. supported operations: new, add-library, add-submodule")
+        ("name", po::value<std::string>()->required(), 
+            "2nd positional argument. operand for the operation")
         ("version,v", "print the version string")
+        ("std", po::value<std::string>()->default_value("11"),
+            "c++ standard version, default value is: 11")
+        ("license", po::value<std::string>()->default_value("MIT"), 
+            "license type, default value is: MIT, supported values: MIT, Apache, LGPLv3, Boost")
         ;
     
     creator.add_options()("static", "create a repo template based on library project (static library) [default]")
