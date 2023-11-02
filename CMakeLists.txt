@@ -46,7 +46,7 @@ add_compile_options(-Wfatal-errors)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 # Find the library
-if (NOT CXX17_SUPPORTED)
+if (NOT CXX17_SUPPORTED OR NOT CXX17_FILESYSTEM_SUPPORTED)
     find_package(Boost REQUIRED COMPONENTS program_options filesystem)
 else()
     find_package(Boost REQUIRED COMPONENTS program_options)
