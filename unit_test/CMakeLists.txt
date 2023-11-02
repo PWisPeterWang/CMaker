@@ -5,10 +5,19 @@ add_executable(test_functions
 target_include_directories(test_functions PRIVATE
     ${PROJECT_SOURCE_DIR}/cmaker)
 
-target_link_libraries(test_functions PRIVATE
-    Boost::program_options
-    fmt
-    GTest::gtest GTest::gtest_main
-    Threads::Threads)
+    if(NOT CXX17_SUPPORTED)
+    target_link_libraries(test_functions PRIVATE
+        Boost::program_options
+        Boost::filesystem
+        fmt
+        GTest::gtest GTest::gtest_main
+        Threads::Threads)
+else()
+    target_link_libraries(test_functions PRIVATE
+        Boost::program_options
+        fmt
+        GTest::gtest GTest::gtest_main
+        Threads::Threads)
+endif()
 
 add_test(NAME CMAKER_FUNCTIONS COMMAND test_functions)

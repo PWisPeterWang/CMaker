@@ -4,13 +4,21 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
+#ifdef USE_BOOST_FILESYSTEM
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+using error_code = boost::system::error_code;
+#else
 #include <filesystem>
 namespace fs = std::filesystem;
+using error_code = std::error_code;
+#endif
 namespace po = boost::program_options;
 
 #define CMAKER_VERSION_MAJOR 0
 #define CMAKER_VERSION_MINOR 0
-#define CMAKER_VERSION_PATCH 2
+#define CMAKER_VERSION_PATCH 3
 
 #define COLORED(xx, id) "\033[1;" #id "m" xx "\033[0m"
 #define RED(xx) COLORED(xx, 31)
@@ -72,7 +80,7 @@ struct PushD
         : cwd(fs::current_path())
         , target(name)
     {
-        std::error_code ec;
+        error_code ec;
         fs::current_path(target, ec);
         if (ec)
         {
@@ -83,7 +91,7 @@ struct PushD
     }
     ~PushD()
     {
-        std::error_code ec;
+        error_code ec;
         fs::current_path(cwd, ec);
         if (ec)
         {

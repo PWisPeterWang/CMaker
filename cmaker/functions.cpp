@@ -17,7 +17,7 @@ bool CreateDirIfNotExist(std::string name)
         LOGERR("directory {} already exists!", name);
         return false;
     }
-    std::error_code ec;
+    error_code ec;
     if (!fs::create_directories(name, ec))
     {
         LOGERR("directory {} create failed! reason: {}", name, ec.message());

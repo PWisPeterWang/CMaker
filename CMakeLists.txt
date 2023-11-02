@@ -1,16 +1,31 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(cmaker LANGUAGES CXX C)
-set(CMAKE_CXX_STANDARD 17)
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=c++17" CXX17_SUPPORTED)
+if(NOT CXX17_SUPPORTED)
+    message(WARNING "C++17 is not supported by the compiler")
+    set(CMAKE_CXX_STANDARD 11)
+    add_compile_definitions("USE_BOOST_FILESYSTEM")
+else()
+    message(STATUS "Using C++17's <filesystem>")
+    set(CMAKE_CXX_STANDARD 17)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_EXTENSION OFF)
+
 add_compile_options(-Wfatal-errors)
 
 # Enable extra find_package modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 # Find the library
-find_package(Boost REQUIRED COMPONENTS program_options system filesystem)
+if (NOT CXX17_SUPPORTED)
+    find_package(Boost REQUIRED COMPONENTS program_options filesystem)
+else()
+    find_package(Boost REQUIRED COMPONENTS program_options)
+endif()
+
 find_package(fmt REQUIRED)
 find_package(Threads REQUIRED)
 
@@ -40,7 +55,16 @@ target_include_directories(cmaker
 target_compile_definitions(cmaker PRIVATE "FMT_HEADER_ONLY")
 
 # Link to thirdparty libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE Boost::program_options)
+if (NOT CXX17_SUPPORTED)
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+            Boost::program_options
+            Boost::filesystem)
+else()
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+            Boost::program_options)
+endif()
 
 include(GNUInstallDirs)
 # Set up the installation 
@@ -65,7 +89,7 @@ set(CMAKER_VER_MINOR ${CMAKE_MATCH_1})
 string(REGEX MATCH "#define CMAKER_VERSION_PATCH ([0-9]*)" _ ${HEADER_CONTENTS})
 set(CMAKER_VER_PATCH ${CMAKE_MATCH_1})
 
-message(STATUS "current myexe version: ${CMAKER_VER_MAJOR}.${CMAKER_VER_MINOR}.${CMAKER_VER_PATCH}")
+message(STATUS "current CMaker version: ${CMAKER_VER_MAJOR}.${CMAKER_VER_MINOR}.${CMAKER_VER_PATCH}")
 set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKER_VER_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${CMAKER_VER_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${CMAKER_VER_PATCH})
