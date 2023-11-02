@@ -28,6 +28,7 @@ add_executable(cmaker
     cmaker/add_thirdparty_library.cpp
     cmaker/add_submodule.cpp
     cmaker/functions.cpp
+    cmaker/writer_funcs.cpp
     )
 
 # Set include dirs

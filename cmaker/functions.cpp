@@ -14,16 +14,16 @@ bool CreateDirIfNotExist(std::string name)
 {
     if (fs::exists(name))
     {
-        ERROR("directory {} already exists!", name);
+        LOGERR("directory {} already exists!", name);
         return false;
     }
     std::error_code ec;
     if (!fs::create_directories(name, ec))
     {
-        ERROR("directory {} create failed! reason: {}", name, ec.message());
+        LOGERR("directory {} create failed! reason: {}", name, ec.message());
         return false;
     }
-    INFO("directory {} created!", name);
+    LOGINFO("directory {} created!", name);
     return true;
 }
 

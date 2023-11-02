@@ -46,12 +46,12 @@ int main(int argc, const char *argv[])
 
     if (!IsExecutableInPath("git"))
     {
-        ERROR("cmaker requires " GREEN("git") " to create repo!");
+        LOGERR("cmaker requires " GREEN("git") " to create repo!");
     }
 
     if (!IsExecutableInPath("cmake"))
     {
-        ERROR("cmaker requires " GREEN("cmake") " on your system!");
+        LOGERR("cmaker requires " GREEN("cmake") " on your system!");
     }
 
     try
@@ -70,7 +70,7 @@ int main(int argc, const char *argv[])
     }
     catch (std::exception const &e)
     {
-        ERROR("error: {}\n", e.what());
+        LOGERR("error: {}\n", e.what());
     }
 
     if (vm.count("operation"))
@@ -90,13 +90,13 @@ int main(int argc, const char *argv[])
         }
         else
         {
-            WARN("invalid operation: {}\n", op);
+            LOGWARN("invalid operation: {}\n", op);
             PrintUsageAndQuit(all, 1);
         }
     }
     else
     {
-        WARN("you didn't set any operation.");
+        LOGWARN("you didn't set any operation.");
         PrintUsageAndQuit(all, 1);
     }
     return 0;
