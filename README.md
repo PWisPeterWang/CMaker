@@ -29,17 +29,20 @@ mylib
 │   ├── bench_example.cpp
 │   └── CMakeLists.txt
 ├── CMakeLists.txt
+├── README.md
+├── LICENSE
+├── .gitignore
+├── .clang-format
 ├── cmake_modules
 ├── mylib
-│   └── header.h
-├── src
-│   └── library.cpp
+│   ├── mylib.h.in
+│   └── mylib.cpp
 ├── thirdparty
 └── unit_test
     ├── CMakeLists.txt
     └── example.cpp
 
-6 directories, 7 files
+5 directories, 9 files
 ```
 
 1. a `bench` directory for benchmarking, with pre-configured CMakeLists.txt and a sample benchmark source file.
@@ -80,9 +83,10 @@ It also contains pre-configured `.gitignore`, `.clang-format` and `.clang-tidy` 
 - [Git](https://git-scm.com/downloads)
 - [GTest](https://github.com/google/googletest)
 - [Benchmark](https://github.com/google/benchmark)
-- A C++ compiler that supports C++17, like GCC 9.3 or above (requried for std::filesystem and initializer for-loop)
+- A C++ compiler that supports C++11 (17), like GCC 4.8.5 (7.3.0) or above (requried for std::filesystem and initializer for-loop)
 
-The project is tested on Ubuntu 20.04 with GCC 13.2.0, and since it uses only standard C++17 features and well known cross-platform libraries, it should work on other platforms as well.
+The project is tested on rhel 7.9 with GCC 4.8.5 and ubuntu 20.04 with GCC 13.2.0.
+If your compiler does not support C++17, Boost.filesystem is required.
 
 ## Installation
 
