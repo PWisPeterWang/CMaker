@@ -852,29 +852,29 @@ DEALINGS IN THE SOFTWARE.
 void WriteLicense(WriterContext const &ctx)
 {
     std::ofstream license("LICENSE");
-    if (ctx.licence.empty())
+    if (ctx.license.empty())
     {
         license << license_MIT;
     }
-    else if (ToUpper(ctx.licence) == "MIT")
+    else if (ToUpper(ctx.license) == "MIT")
     {
         license << license_MIT;
     }
-    else if (ToUpper(ctx.licence) == "LGPLV3")
+    else if (ToUpper(ctx.license) == "LGPLV3")
     {
         license << license_LGPLV3;
     }
-    else if (ToUpper(ctx.licence) == "APACHE")
+    else if (ToUpper(ctx.license) == "APACHE")
     {
         license << license_APACHE;
     }
-    else if (ToUpper(ctx.licence) == "BOOST")
+    else if (ToUpper(ctx.license) == "BOOST")
     {
         license << license_BOOST;
     }
     else
     {
-        LOGWARN("unsupported license type: {}, use MIT license instead", ctx.licence);
+        LOGWARN("unsupported license type: {}, use MIT license instead", ctx.license);
         license << license_MIT;
     }
 }
@@ -906,5 +906,5 @@ void WriteReadme(WriterContext const &ctx)
     readme << "## License\n"
            << fmt::format("This project is licensed under the {} License - see the "
                           "[LICENSE](LICENSE) file for details.\n",
-                  ctx.licence);
+                  ctx.license);
 }

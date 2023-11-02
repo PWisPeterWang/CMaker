@@ -92,7 +92,7 @@ void WriteCMakeFindModule()
         }
     }
 
-    std::ofstream module_file(module_path);
+    std::ofstream module_file(module_path.string());
     if (!module_file)
     {
         LOGERR("{} open fail, abort!");

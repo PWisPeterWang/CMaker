@@ -83,9 +83,9 @@ It also contains pre-configured `.gitignore`, `.clang-format` and `.clang-tidy` 
 - [Git](https://git-scm.com/downloads)
 - [GTest](https://github.com/google/googletest)
 - [Benchmark](https://github.com/google/benchmark)
-- A C++ compiler that supports C++11 (17), like GCC 4.8.5 (7.3.0) or above (requried for std::filesystem and initializer for-loop)
+- A C++ compiler that supports C++11 like GCC 4.8.5 with Boost library, or C++17 like GCC 9.3.0 or above (requried for std::filesystem and initializer for-loop)
 
-The project is tested on rhel 7.9 with GCC 4.8.5 and ubuntu 20.04 with GCC 13.2.0.
+The project is tested on rhel 7.9 with GCC 4.8.5 (plus boost.filesystem) and ubuntu 20.04 with GCC 13.2.0.
 If your compiler does not support C++17, Boost.filesystem is required.
 
 ## Installation
