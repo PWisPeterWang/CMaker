@@ -22,9 +22,15 @@ int main(int argc, const char *argv[])
 {
     // clang-format off
     general.add_options()("help", "print the help message")
-        ("operation", po::value<std::string>()->required(), "1st positional argument. supported operations: new, add-library, add-submodule")
-        ("name", po::value<std::string>()->required(), "2nd positional argument. operand for the operation")
+        ("operation", po::value<std::string>()->required(), 
+            "1st positional argument. supported operations: new, add-library, add-submodule")
+        ("name", po::value<std::string>()->required(), 
+            "2nd positional argument. operand for the operation")
         ("version,v", "print the version string")
+        ("std", po::value<std::string>()->default_value("11"),
+            "c++ standard version, default value is: 11")
+        ("license", po::value<std::string>()->default_value("MIT"), 
+            "license type, default value is: MIT, supported values: MIT, Apache, LGPLv3, Boost")
         ;
     
     creator.add_options()("static", "create a repo template based on library project (static library) [default]")
@@ -46,12 +52,12 @@ int main(int argc, const char *argv[])
 
     if (!IsExecutableInPath("git"))
     {
-        ERROR("cmaker requires " GREEN("git") " to create repo!");
+        LOGERR("cmaker requires " GREEN("git") " to create repo!");
     }
 
     if (!IsExecutableInPath("cmake"))
     {
-        ERROR("cmaker requires " GREEN("cmake") " on your system!");
+        LOGERR("cmaker requires " GREEN("cmake") " on your system!");
     }
 
     try
@@ -70,7 +76,7 @@ int main(int argc, const char *argv[])
     }
     catch (std::exception const &e)
     {
-        ERROR("error: {}\n", e.what());
+        LOGERR("error: {}\n", e.what());
     }
 
     if (vm.count("operation"))
@@ -90,13 +96,13 @@ int main(int argc, const char *argv[])
         }
         else
         {
-            WARN("invalid operation: {}\n", op);
+            LOGWARN("invalid operation: {}\n", op);
             PrintUsageAndQuit(all, 1);
         }
     }
     else
     {
-        WARN("you didn't set any operation.");
+        LOGWARN("you didn't set any operation.");
         PrintUsageAndQuit(all, 1);
     }
     return 0;

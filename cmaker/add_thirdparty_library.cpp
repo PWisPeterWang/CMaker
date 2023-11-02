@@ -15,19 +15,18 @@ void AddThirdpartyLibrary()
 {
     if (!vm.count("name"))
     {
-        WARN("missing library name for creating project!");
-        PrintUsageAndQuit(adder_library);
+        LOGERR("missing library name for creating project!");
     }
     name = vm["name"].as<std::string>();
 
     if (!vm.count("inc"))
     {
-        WARN("header path is required");
+        LOGWARN("header path is required");
         PrintUsageAndQuit(adder_library);
     }
     if (!vm.count("path"))
     {
-        WARN("library path is required\n");
+        LOGWARN("library path is required\n");
         PrintUsageAndQuit(adder_library);
     }
 
@@ -36,31 +35,31 @@ void AddThirdpartyLibrary()
     fs::path header_file = inc_path.filename();
     if (header_file.empty())
     {
-        ERROR("include hint: {} does not have header file", inc_path.string());
+        LOGERR("include hint: {} does not have header file", inc_path.string());
     }
     inc_names = header_file.string();
 
     inc_hints = inc_path.parent_path();
-    INFO("given header path: {}", inc_hints.string());
+    LOGINFO("given header path: {}", inc_hints.string());
 
     if (!fs::exists(inc_path) || !fs::is_regular_file(inc_path))
     {
-        WARN("header file {{}} does not exist!", header_file.string());
+        LOGWARN("header file {{}} does not exist!", header_file.string());
     }
 
     if (!fs::exists(inc_hints) || !fs::is_directory(inc_hints))
     {
-        WARN("header include dir {{}} does not exist!", inc_hints.string());
+        LOGWARN("header include dir {{}} does not exist!", inc_hints.string());
     }
 
     lib_path = fs::canonical(vm["path"].as<std::string>());
     if (!fs::exists(lib_path) || !fs::is_directory(lib_path))
     {
-        WARN("library path {{}} does not exsit!", lib_path.string());
+        LOGWARN("library path {{}} does not exsit!", lib_path.string());
     }
 
     WriteCMakeFindModule();
-    INFO("successfully added library: {}, inc-path:{}, lib-path:{}", name, inc_hints.string(),
+    LOGINFO("successfully added library: {}, inc-path:{}, lib-path:{}", name, inc_hints.string(),
         lib_path.string());
 }
 
@@ -68,12 +67,12 @@ void WriteCMakeFindModule()
 {
     if (!IsProjectRoot())
     {
-        ERROR("must be under the project root directory!");
+        LOGERR("must be under the project root directory!");
     }
 
     if (!fs::exists("cmake_modules") || !fs::is_directory("cmake_modules"))
     {
-        ERROR("cmake_modules directory does not exist!");
+        LOGERR("cmake_modules directory does not exist!");
     }
     // for example, a library name 'libboost_program_options.so'
     // the target name when add-library should be 'boost_program_options'
@@ -85,10 +84,10 @@ void WriteCMakeFindModule()
         fs::current_path() / "cmake_modules" / fmt::format("Find{}.cmake", pascal_name);
     if (fs::exists(module_path))
     {
-        WARN("{} exists, overwrite? (N/y)", module_path.string());
+        LOGWARN("{} exists, overwrite? (N/y)", module_path.string());
         if (!PromptUserConfirm())
         {
-            INFO("abort, please clean up your workspace and retry.");
+            LOGINFO("abort, please clean up your workspace and retry.");
             exit(1);
         }
     }
@@ -96,7 +95,7 @@ void WriteCMakeFindModule()
     std::ofstream module_file(module_path);
     if (!module_file)
     {
-        ERROR("{} open fail, abort!");
+        LOGERR("{} open fail, abort!");
     }
     // AbcDefGhi -> ABCDEFGHI
     std::string upper_pascal = ToUpper(pascal_name);
@@ -130,5 +129,5 @@ endif()
 )==",
         pascal_name, upper_pascal, lib_path.string(), inc_names, inc_hints.string(), name);
 
-    INFO("module_file: {} created.", module_path.string());
+    LOGINFO("module_file: {} created.", module_path.string());
 }

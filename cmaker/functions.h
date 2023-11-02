@@ -4,13 +4,21 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
+#ifdef USE_BOOST_FILESYSTEM
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+using error_code = boost::system::error_code;
+#else
 #include <filesystem>
 namespace fs = std::filesystem;
+using error_code = std::error_code;
+#endif
 namespace po = boost::program_options;
 
 #define CMAKER_VERSION_MAJOR 0
 #define CMAKER_VERSION_MINOR 0
-#define CMAKER_VERSION_PATCH 2
+#define CMAKER_VERSION_PATCH 3
 
 #define COLORED(xx, id) "\033[1;" #id "m" xx "\033[0m"
 #define RED(xx) COLORED(xx, 31)
@@ -22,9 +30,9 @@ namespace po = boost::program_options;
 
 void PrintUsageAndQuit(po::options_description &des, int errc = 1);
 
-#define INFO(xx, ...) fmt::print("[" GREEN("INFO") "] " xx "\n", ##__VA_ARGS__)
-#define WARN(xx, ...) fmt::print("[" YELLOW("WARN") "] " xx "\n", ##__VA_ARGS__)
-#define ERROR(xx, ...)                                                                             \
+#define LOGINFO(xx, ...) fmt::print("[" GREEN("INFO") "] " xx "\n", ##__VA_ARGS__)
+#define LOGWARN(xx, ...) fmt::print("[" YELLOW("WARN") "] " xx "\n", ##__VA_ARGS__)
+#define LOGERR(xx, ...)                                                                             \
     do                                                                                             \
     {                                                                                              \
         fmt::print(stderr, "[" RED("ERROR") "] " xx "\n", ##__VA_ARGS__);                          \
@@ -72,24 +80,24 @@ struct PushD
         : cwd(fs::current_path())
         , target(name)
     {
-        std::error_code ec;
+        error_code ec;
         fs::current_path(target, ec);
         if (ec)
         {
-            ERROR("pushd to {} error, reason: {}", target.string(), ec.message());
+            LOGERR("pushd to {} error, reason: {}", target.string(), ec.message());
             exit(1);
         }
-        INFO("entering directory {}", target.string());
+        LOGINFO("entering directory {}", target.string());
     }
     ~PushD()
     {
-        std::error_code ec;
+        error_code ec;
         fs::current_path(cwd, ec);
         if (ec)
         {
-            ERROR("popd to {} error, reason: {}", cwd.string(), ec.message());
+            LOGERR("popd to {} error, reason: {}", cwd.string(), ec.message());
         }
-        INFO("leaving directory {}", target.string());
+        LOGINFO("leaving directory {}", target.string());
     }
 
     fs::path cwd;
