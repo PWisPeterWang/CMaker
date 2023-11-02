@@ -1,16 +1,42 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(cmaker LANGUAGES CXX C)
+
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag("-std=c++17" CXX17_SUPPORTED)
 if(NOT CXX17_SUPPORTED)
     message(WARNING "C++17 is not supported by the compiler")
     set(CMAKE_CXX_STANDARD 11)
-    add_compile_definitions("USE_BOOST_FILESYSTEM")
+    add_compile_definitions(USE_BOOST_FILESYSTEM)
 else()
-    message(STATUS "Using C++17's <filesystem>")
+    message(STATUS "C++17 is supported by the compiler")
     set(CMAKE_CXX_STANDARD 17)
+
+    # Generate the test file
+    set(TEST_FILE ${CMAKE_BINARY_DIR}/test_cxx17_filesystem.cpp)
+    file(WRITE ${TEST_FILE}
+        "#include <filesystem>\n"
+        "int main() { std::filesystem::path p; return 0; }\n"
+    )
+
+    # Check if the compiler supports C++17's <filesystem>
+    try_compile(CXX17_FILESYSTEM_SUPPORTED
+        ${CMAKE_BINARY_DIR}/temp
+        ${TEST_FILE}
+        COMPILE_DEFINITIONS "-std=c++17"
+    )
+
+    # Remove the test file
+    file(REMOVE ${TEST_FILE})
+
+    if(CXX17_FILESYSTEM_SUPPORTED)
+        message(STATUS "C++17's <filesystem> is supported by the compiler")
+    else()
+        message(WARNING "C++17's <filesystem> is not supported by the compiler")
+        add_compile_definitions(USE_BOOST_FILESYSTEM)
+    endif()
 endif()
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_EXTENSION OFF)
 
@@ -55,15 +81,19 @@ target_include_directories(cmaker
 target_compile_definitions(cmaker PRIVATE "FMT_HEADER_ONLY")
 
 # Link to thirdparty libraries
-if (NOT CXX17_SUPPORTED)
+if (NOT CXX17_SUPPORTED OR NOT CXX17_FILESYSTEM_SUPPORTED)
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
+            fmt::fmt
             Boost::program_options
-            Boost::filesystem)
+            Boost::filesystem
+            Threads::Threads)
 else()
     target_link_libraries(${PROJECT_NAME}
         PRIVATE
-            Boost::program_options)
+            fmt::fmt
+            Boost::program_options
+            Threads::Threads)
 endif()
 
 include(GNUInstallDirs)
