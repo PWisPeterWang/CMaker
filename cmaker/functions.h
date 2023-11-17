@@ -46,6 +46,7 @@ void AddThirdpartyLibrary();
 void AddSubmodule();
 void AddBench();
 void AddTests();
+void AddTemplate();
 
 // true on success false on fail (exists)
 bool CreateDirIfNotExist(std::string name);

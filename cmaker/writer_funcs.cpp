@@ -120,7 +120,7 @@ set(CPACK_PACKAGE_VERSION_PATCH ${{{1}_VERSION_PATCH}})
     LOGINFO("root CMakeLists.txt written complete!");
 }
 
-void WriteUnitTests(WriterContext const &ctx)
+void WriteUnitTests()
 {
     std::ofstream unit_test("unit_test/CMakeLists.txt");
     unit_test << R"(# an easy way to add unit test
@@ -166,7 +166,7 @@ int main(int argc, char** argv)
     LOGINFO("unit_test/CMakeLists.txt written complete!");
 }
 
-void WriteBenchmark(WriterContext const &ctx)
+void WriteBenchmark()
 {
     std::ofstream bench("bench/CMakeLists.txt");
     bench << R"(function(add_benchmark BENCH_NAME SOURCE)

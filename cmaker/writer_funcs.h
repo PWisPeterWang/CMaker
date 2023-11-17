@@ -18,8 +18,8 @@ struct WriterContext
 };
 
 void WriteCMakeLists(WriterContext const& ctx);
-void WriteUnitTests(WriterContext const& ctx);
-void WriteBenchmark(WriterContext const& ctx);
+void WriteUnitTests();
+void WriteBenchmark();
 void WriteSrcAndHeader(WriterContext const& ctx);
 void WriteGitignore();
 void WriteClangformat();

@@ -97,20 +97,7 @@ int main(int argc, const char *argv[])
         }
         else if (op == "template")
         {
-            auto name = vm["name"].as<std::string>();
-            if (name == "help")
-            {
-                fmt::print("Available templates: [bench, tests]\n");
-                return 0;
-            }
-            if (name == "bench")
-            {
-                AddBench();
-            }
-            else if (name == "tests")
-            {
-                AddTests();
-            }
+            AddTemplate();
         }
         else
         {
