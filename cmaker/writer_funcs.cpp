@@ -5,19 +5,17 @@ void WriteCMakeLists(WriterContext const &ctx)
 {
     auto upper_name = ToUpper(ctx.repo_name);
     std::ofstream cmakelist("CMakeLists.txt");
-    cmakelist << "cmake_minimum_required(VERSION 3.21)\n\n"
-              << fmt::format(R"(set({0}_VERSION_MAJOR 0)
+    cmakelist << fmt::format(R"(cmake_minimum_required(VERSION 3.21)
+set({0}_VERSION_MAJOR 0)
 set({0}_VERSION_MINOR 0)
 set({0}_VERSION_PATCH 1)
 project({1} 
-    LANGUAGES CXX C 
-    VERSION ${{{0}_VERSION_MAJOR}}.${{{0}_VERSION_MINOR}}.${{{0}_VERSION_PATCH}})
+    LANGUAGES
+        CXX C 
+    VERSION
+        ${{{0}_VERSION_MAJOR}}.${{{0}_VERSION_MINOR}}.${{{0}_VERSION_PATCH}})
 )",
-                     upper_name, ctx.repo_name);
-    cmakelist << fmt::format(R"(configure_file({0}/header.h.in
-${{CMAKE_CURRENT_SOURCE_DIR}}/{0}/header.h @ONLY)
-)",
-        ctx.repo_name);
+        upper_name, ctx.repo_name);
 
     cmakelist << "# edit the following settings as you desire\n"
               << fmt::format("set(CMAKE_CXX_STANDARD {})\n", ctx.cxx_std)
@@ -26,22 +24,23 @@ ${{CMAKE_CURRENT_SOURCE_DIR}}/{0}/header.h @ONLY)
               << "add_compile_options(-Wfatal-errors)\n\n";
     cmakelist << "# edit the following line to add your cmake modules\n"
               << "list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)\n";
-    cmakelist << "# options flags to turn on/off unit tests and benchmarks\n"
-              << "option(BUILD_TESTS \"build unit tests\" OFF)\n"
-              << "option(BUILD_BENCHMARKS \"build benchmark tests\" OFF)\n";
     cmakelist << "# edit the following line to add your dependencies\n"
               << "find_package(Threads REQUIRED)\n\n";
     // for executable repo, scan the 'repo_name' dir to add all cpp files as it's SRCS
+    cmakelist << "# Please note, CMake does not recommend GLOB to collect a list of source files "
+                 "from your source tree.\n"
+              << "# Any new files added to your source tree won't be noticed by CMake until you "
+                 "rerun CMake manually.\n";
     if (RepoType::EXECUTABLE == ctx.repo_type)
     {
-        cmakelist << fmt::format("file(GLOB EXECUTABLE_SRC \"{}/*.cpp\")\n", ctx.repo_name)
+        cmakelist << fmt::format("file(GLOB_RECURSE EXECUTABLE_SRC \"{}/*.cpp\")\n", ctx.repo_name)
                   << "add_executable(${PROJECT_NAME} ${EXECUTABLE_SRC})\n";
         cmakelist << "target_include_directories(${PROJECT_NAME} PRIVATE\n    "
                   << fmt::format("${{PROJECT_SOURCE_DIR}}/{})\n\n", ctx.repo_name);
     }
     else // for library repo, scan the 'src' dir to add all cpp files as it's SRCS
     {
-        cmakelist << fmt::format("file(GLOB LIBRARY_SRC \"{}/*.cpp\")\n", ctx.repo_name)
+        cmakelist << fmt::format("file(GLOB_RECURSE LIBRARY_SRC \"{}/*.cpp\")\n", ctx.repo_name)
                   << "add_library(${PROJECT_NAME} "
                   << (ctx.repo_type == RepoType::SHARED ? "SHARED" : "STATIC")
                   << " \"${LIBRARY_SRC}\")\n";
@@ -58,53 +57,57 @@ ${{CMAKE_CURRENT_SOURCE_DIR}}/{0}/header.h @ONLY)
     cmakelist << R"(# edit the following line to link your dependencies libraries
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-            Threads::Threads))";
-
-    // unit tests
-    cmakelist << R"(#if called with -DBUILD_TESTS the unit test targets will be enabled
-if(BUILD_TESTS)
-    find_package(GTest REQUIRED)
-    enable_testing()
-    add_subdirectory(unit_test)
-endif()
-)";
-
-    // benchmark tests
-    cmakelist << R"(#if called with -DBUILD_BENCHMARKS the benchmark target will be enabled
-if(BUILD_BENCHMARKS)
-    find_package(benchmark REQUIRED)
-    add_subdirectory(bench)
-endif()
+        Threads::Threads)
 )";
 
     // install
-    cmakelist << "# install settings\n";
-    cmakelist << "include(GNUInstallDirs)\n"
-              << "install(TARGETS ${PROJECT_NAME}\n"
-              << "    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}\n"
-              << "    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}\n"
-              << "    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}\n)\n";
+    cmakelist << fmt::format(R"(# install settings
+include(GNUInstallDirs)
+install(TARGETS ${{PROJECT_NAME}}
+    EXPORT {}_EXPORT
+    RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
+    LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+    ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}})
+)",
+        upper_name);
+
     // install public headers if it's library repo
     if (RepoType::EXECUTABLE != ctx.repo_type)
     {
-        cmakelist << "# install public headers\n";
-        cmakelist << "set(PUBLIC_HEADER_DIR ${PROJECT_SOURCE_DIR}/" << ctx.repo_name << ")\n"
-                  << "install(DIRECTORY ${PUBLIC_HEADER_DIR}\n"
-                  << "    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}\n"
-                  << "    FILES_MATCHING\n"
-                  << "        PATTERN \"*.h\"\n"
-                  << "        PATTERN \"*.hpp\"\n)\n";
+        cmakelist << fmt::format(R"(# install public headers
+set(PUBLIC_HEADER_DIR ${{PROJECT_SOURCE_DIR}}/{})
+install(DIRECTORY ${{PUBLIC_HEADER_DIR}}
+    DESTINATION ${{CMAKE_INSTALL_INCLUDEDIR}}
+    FILES_MATCHING
+        PATTERN "*.h"
+        PATTERN "*.hpp")
+)",
+            ctx.repo_name);
     }
+
+    // export cmake config
+    cmakelist << fmt::format(R"(install(EXPORT {0}_EXPORT
+    FILE {1}-config.cmake
+    NAMESPACE {1}::
+    DESTINATION cmake)
+    include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "{1}-config-version.cmake"
+    COMPATIBILITY SameMajorVersion)
+install(FILES
+    "${{CMAKE_CURRENT_BINARY_DIR}}/{1}-config-version.cmake"
+    DESTINATION cmake)
+)",
+        upper_name, ctx.repo_name);
+
     // both library and executable repo support versioning
-    cmakelist
-        << "# auto versioning reads from header.h to get versionstring\n"
-        << fmt::format(
-               R"(message(STATUS "current {0} version: ${{{1}_VERSION_MAJOR}}.${{{1}_VERSION_MINOR}}.${{{1}_VERSION_PATCH}}")
+    cmakelist << fmt::format(
+        R"(message(STATUS "current {0} version: ${{{1}_VERSION_MAJOR}}.${{{1}_VERSION_MINOR}}.${{{1}_VERSION_PATCH}}")
 set(CPACK_PACKAGE_VERSION_MAJOR ${{{1}_VERSION_MAJOR}})
 set(CPACK_PACKAGE_VERSION_MINOR ${{{1}_VERSION_MINOR}})
 set(CPACK_PACKAGE_VERSION_PATCH ${{{1}_VERSION_PATCH}})
 )",
-               ctx.repo_name, upper_name);
+        ctx.repo_name, upper_name);
     // cpack settings
     cmakelist << "# cpack settings, edit the following to pack up as you desire\n";
     cmakelist << "if(UNIX)\n"
@@ -120,14 +123,16 @@ set(CPACK_PACKAGE_VERSION_PATCH ${{{1}_VERSION_PATCH}})
 void WriteUnitTests(WriterContext const &ctx)
 {
     std::ofstream unit_test("unit_test/CMakeLists.txt");
-    unit_test << R"(set(LIBRARIES_FOR_TEST "") # put your library here
-# an easy way to add unit test
-# for now it supports only one src file as SOURCE
+    unit_test << R"(# an easy way to add unit test
+# for now it supports only one src file for each TestCase
 function(add_unit_test CASE_TARGET SOURCE)
     add_executable(${CASE_TARGET} ${SOURCE})
-    target_link_libraries(${CASE_TARGET} PRIVATE )";
-    unit_test << (RepoType::EXECUTABLE != ctx.repo_type ? ctx.repo_name : "") << R"(
-    ${LIBRARIES_FOR_TEST} GTest::gtest GTest::gtest_main Threads::Threads)
+    target_link_libraries(${CASE_TARGET}
+        PRIVATE 
+            ${LIBRARIES_FOR_TEST} # put your library here
+            GTest::gtest
+            GTest::gtest_main
+            Threads::Threads)
     string(TOUPPER ${CASE_TARGET} CASE_TARGET_UPPERCASE)
     set(CASE_NAME "TEST_${CASE_TARGET_UPPERCASE}")
     add_test(NAME ${CASE_NAME} COMMAND ${CASE_TARGET})
@@ -164,12 +169,12 @@ int main(int argc, char** argv)
 void WriteBenchmark(WriterContext const &ctx)
 {
     std::ofstream bench("bench/CMakeLists.txt");
-    bench << R"(set(LIBRARIES_FOR_BENCH "") # put your library here
-function(add_benchmark BENCH_NAME SOURCE)
+    bench << R"(function(add_benchmark BENCH_NAME SOURCE)
     add_executable(${BENCH_NAME} ${SOURCE})
-    target_link_libraries(${BENCH_NAME} PRIVATE )";
-    bench << (RepoType::EXECUTABLE != ctx.repo_type ? ctx.repo_name : "") << R"(
-    ${LIBRARIES_FOR_BENCH} benchmark Threads::Threads)
+    target_link_libraries(${BENCH_NAME}
+        PRIVATE
+            benchmark
+            Threads::Threads)
 endfunction()
 
 add_benchmark(bench_example bench_example.cpp)
@@ -232,7 +237,7 @@ void WriteSrcAndHeader(WriterContext const &ctx)
     {
         LOGERR("failed to open file: {}", cppfile_name);
     }
-    cppfile << fmt::format(R"(#include "header.h"
+    cppfile << fmt::format(R"(#include "{1}.h"
 const char *GetVersionString()
 {{
 #define XX(x) #x
@@ -242,7 +247,7 @@ const char *GetVersionString()
 #undef STRINGIFY
 }}
 )",
-        upper_name);
+        upper_name, ctx.repo_name);
 
     LOGINFO("{} written complete!", cppfile_name);
 
@@ -253,16 +258,18 @@ const char *GetVersionString()
         {
             LOGERR("failed to open file: {}/main.cpp", ctx.repo_name);
         }
-        helloworld << "#include <iostream>\n"
-                   << "#include \"header.h\"\n\n"
-                   << "int main(int argc, char** argv)\n{\n"
-                   << fmt::format("    std::cout << \"hello {}! version:\"<< GetVersionString() << "
-                                  "std::endl;\n}}\n",
-                          ctx.repo_name);
+        helloworld << fmt::format(R"(#include <iostream>
+#include "{0}.h"
+int main(int argc, char** argv)
+{{
+    std::cout << "hello {0}! version:" << GetVersionString() << std::endl;
+}}
+)",
+            ctx.repo_name);
     }
 
     // headers are always under the 'repo_name' dir
-    auto header_name = fmt::format("{}/header.h.in", ctx.repo_name);
+    auto header_name = fmt::format("{0}/{0}.h", ctx.repo_name);
     std::ofstream header(header_name);
     if (!header)
     {
@@ -270,12 +277,18 @@ const char *GetVersionString()
     }
     header << fmt::format(
         R"(#pragma once
-#define {0}_VERSION_MAJOR @{0}_VERSION_MAJOR@
-#define {0}_VERSION_MINOR @{0}_VERSION_MINOR@
-#define {0}_VERSION_PATCH @{0}_VERSION_PATCH@
-const char* GetVersionString();
-)",
+#define {0}_VERSION_MAJOR 0
+#define {0}_VERSION_MINOR 0
+#define {0}_VERSION_PATCH 1
+const char* GetVersionString();)",
         upper_name);
+    header << R"(
+// if you want auto versioning feature, you can rename this file as {0}.h.in
+// replace the version number to "@{0}_VERSION_MAJOR@" , etc.
+// then add `configure_file({0}.h.in {0}.h @ONLY)` in your CMakeLists.txt
+// CMake will replace the "@{0}_VERSION_MAJOR@" string with the actual version number
+// and generate the {0}.h file in ${CMAKE_BINARY_DIR}
+)";
 
     LOGINFO("{} written complete!", header_name);
 }
@@ -302,6 +315,7 @@ void WriteGitignore()
 
 # Visual Studion Code dirs
 .vscode/
+.vs/
 
 # Python cache
 __pycache__/
@@ -310,11 +324,15 @@ __pycache__/
 # build related
 autom4te.cache/
 build/
+build64_debug/
+build64_release/
+blade-bin/
 
 # binary output
 bin/
 
 # os related
+.cache/
 .DS_Store
 ehthumbs.db
 Thumbs.db)";

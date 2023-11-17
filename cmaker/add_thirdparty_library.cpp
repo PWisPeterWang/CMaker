@@ -18,6 +18,11 @@ void AddThirdpartyLibrary()
         LOGERR("missing library name for creating project!");
     }
     name = vm["name"].as<std::string>();
+    if (name == "help")
+    {
+        std::cout << adder_library;
+        return ;
+    }
 
     if (!vm.count("inc"))
     {

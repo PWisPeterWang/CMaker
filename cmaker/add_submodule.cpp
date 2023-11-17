@@ -21,6 +21,12 @@ void AddSubmodule()
     }
 
     name = vm["name"].as<std::string>();
+    if (name == "help")
+    {
+        std::cout << adder_module;
+        return ;
+    }
+
     if (!vm.count("url"))
     {
         LOGWARN("url is required to init submodule!");

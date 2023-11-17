@@ -70,6 +70,8 @@ add_executable(cmaker
     cmaker/add_submodule.cpp
     cmaker/functions.cpp
     cmaker/writer_funcs.cpp
+    cmaker/add_bench.cpp
+    cmaker/add_tests.cpp
     )
 
 # Set include dirs
