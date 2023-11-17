@@ -15,6 +15,7 @@ po::options_description general(BLUE("general options"));
 po::options_description creator(BLUE("create a new repo"));
 po::options_description adder_library(BLUE("add thirdparty library"));
 po::options_description adder_module(BLUE("add submodule"));
+po::options_description adder_template(BLUE("add benchmark or gtest template"));
 po::positional_options_description pos_desc;
 po::variables_map vm;
 
@@ -23,7 +24,7 @@ int main(int argc, const char *argv[])
     // clang-format off
     general.add_options()("help", "print the help message")
         ("operation", po::value<std::string>()->required(), 
-            "1st positional argument. supported operations: new, add-library, add-submodule")
+            "1st positional argument. supported operations: new, add-library, add-submodule, template")
         ("name", po::value<std::string>()->required(), 
             "2nd positional argument. operand for the operation")
         ("version,v", "print the version string")
@@ -93,6 +94,10 @@ int main(int argc, const char *argv[])
         else if (op == "add-submodule")
         {
             AddSubmodule();
+        }
+        else if (op == "template")
+        {
+            AddTemplate();
         }
         else
         {

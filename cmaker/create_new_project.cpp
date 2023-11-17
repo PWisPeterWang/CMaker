@@ -45,14 +45,11 @@ void CreateNewProject()
         CreateDirIfNotExist(ctx.repo_name);
         CreateDirIfNotExist("cmake_modules");
         CreateDirIfNotExist("thirdparty");
-        CreateDirIfNotExist("bench");
-        CreateDirIfNotExist("unit_test");
         WriteCMakeLists(ctx);
-        WriteUnitTests(ctx);
-        WriteBenchmark(ctx);
         WriteSrcAndHeader(ctx);
         WriteGitignore();
         WriteClangformat();
+        WriteClangTidy();
         WriteLicense(ctx);
         WriteReadme(ctx);
 

@@ -55,14 +55,18 @@ mylib
 
 The pre-configured install commands in the root CMakeLists.txt will by default install the `mylib` directory to the `${CMAKE_INSTALL_INCLUDEDIR}` as public headers, and the headers located under `src` will be considered as private headers. You can change the install commands in the `CMakeLists.txt` file to achieve more customization.
 
+
 Note that by default, the `CMakeLists.txt` file will install the `mylib` directory as a static library. If you want to install it as a shared library, you can add the `--shared` option when calling `cmaker new`. 
+
 
 Also note that by default, the package location will be under the `build/package` directoy after calling `cpack` under the `build` directory, and it will be packed as tarball in Linux and Zip archive in Windows. You can change the package location and packaging behavior by modifying the CPack section in the root `CMakeLists.txt` file.
 
+
 Another thing to note is that by default, the `header.h` contains your library's version string consisting from `MYLIB_VERSION_MAJOR`, `MYLIB_VERSION_MINOR` and `MYLIB_VERSION_PATCH` ('MYLIB' is the library name). The CPack section in the root `CMakeLists.txt` file will automatically set the package version to the version string. So that whenever you changes the version of you header, the package name will automatically change as well.
 
-The pre-configured unit test CMakeLists.txt will scan the `unit_test` directory for any `.cpp` source files and add them as unit test executables. It provides a CMake function that simplifies the code needed to add a unit test.
-You can add your own unit test source files to the `unit_test` directory and they will be automatically added to the unit test executables. For now, the `add_unit_test` function takes only 1 source file as argument. If you want to add more source files in a unit test executable, you would have to modify the `add_unit_test` function by yourself.
+
+If you want to add unit tests to your project, simply call `cmaker template tests`. It will generate a `unit_test` directory with example code and CMakelists.txt, using GoogleTest framework. You can add your own unit test source files to the `unit_test` directory and they will be automatically added to the unit test executables. For now, the `add_unit_test` function takes only 1 source file as argument. If you want to add more source files in a unit test executable, you would have to modify the `add_unit_test` function by yourself. `cmaker template bench` will create a `bench` directory with example code, using google's benchmark framework.
+
 
 It also contains pre-configured `.gitignore`, `.clang-format` and `.clang-tidy` (stolen from fmtlib :p) files. You can modify them to suit your needs.
 
@@ -107,6 +111,11 @@ cmaker add-library mydep -I thirdparty/include/mydep.h -L thirdparty/lib
 
 # adding a new submodule
 cmaker add-submodule myrepo -U https://github.com/me/myrepo.git
+
+# adding benchmark and gtest template
+cmaker template bench # this will create a bench directory with bench_example.cpp
+cmaker template tests # this will create a unit_test directory with example.cpp
+
 ```
 
 ## Contributing
