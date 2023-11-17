@@ -49,6 +49,7 @@ void CreateNewProject()
         WriteSrcAndHeader(ctx);
         WriteGitignore();
         WriteClangformat();
+        WriteClangTidy();
         WriteLicense(ctx);
         WriteReadme(ctx);
 

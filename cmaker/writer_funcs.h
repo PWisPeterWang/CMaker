@@ -25,3 +25,4 @@ void WriteGitignore();
 void WriteClangformat();
 void WriteLicense(WriterContext const& ctx);
 void WriteReadme(WriterContext const& ctx);
+void WriteClangTidy();
