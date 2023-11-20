@@ -13,7 +13,6 @@ struct WriterContext
 {
     std::string repo_name;
     RepoType repo_type;
-    std::string cxx_std{"11"};
     std::string license;
 };
 

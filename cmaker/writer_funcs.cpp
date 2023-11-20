@@ -17,40 +17,43 @@ project({1}
 )",
         upper_name, ctx.repo_name);
 
-    cmakelist << "# edit the following settings as you desire\n"
-              << fmt::format("set(CMAKE_CXX_STANDARD {})\n", ctx.cxx_std)
-              << "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
-              << "set(CMAKE_CXX_STANDARD_EXTENSION OFF)\n"
-              << "add_compile_options(-Wfatal-errors)\n\n";
-    cmakelist << "# edit the following line to add your cmake modules\n"
-              << "list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)\n";
-    cmakelist << "# edit the following line to add your dependencies\n"
-              << "find_package(Threads REQUIRED)\n\n";
-    // for executable repo, scan the 'repo_name' dir to add all cpp files as it's SRCS
-    cmakelist << "# Please note, CMake does not recommend GLOB to collect a list of source files "
-                 "from your source tree.\n"
-              << "# Any new files added to your source tree won't be noticed by CMake until you "
-                 "rerun CMake manually.\n";
+    cmakelist << R"(# edit the following settings as you desire
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# edit the following line to add your cmake modules
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
+# edit the following line to add your dependencies
+find_package(Threads REQUIRED)
+
+# Please note, CMake does not recommend GLOB to collect a list of source files from your source tree.
+# Any new files added to your source tree won't be noticed by CMake until you rerun CMake manually.)";
+
     if (RepoType::EXECUTABLE == ctx.repo_type)
     {
-        cmakelist << fmt::format("file(GLOB_RECURSE EXECUTABLE_SRC \"{}/*.cpp\")\n", ctx.repo_name)
-                  << "add_executable(${PROJECT_NAME} ${EXECUTABLE_SRC})\n";
-        cmakelist << "target_include_directories(${PROJECT_NAME} PRIVATE\n    "
-                  << fmt::format("${{PROJECT_SOURCE_DIR}}/{})\n\n", ctx.repo_name);
+        cmakelist << fmt::format(R"(file(GLOB_RECURSE EXECUTABLE_SRC "{}/*.cpp")
+add_executable(${{PROJECT_NAME}} ${{EXECUTABLE_SRC}})
+target_include_directories(${{PROJECT_NAME}}
+    PRIVATE
+        $<BUILD_INTERFACE:${{PROJECT_SOURCE_DIR}}/{}>)
+)",
+            ctx.repo_name);
     }
     else // for library repo, scan the 'src' dir to add all cpp files as it's SRCS
     {
-        cmakelist << fmt::format("file(GLOB_RECURSE LIBRARY_SRC \"{}/*.cpp\")\n", ctx.repo_name)
-                  << "add_library(${PROJECT_NAME} "
-                  << (ctx.repo_type == RepoType::SHARED ? "SHARED" : "STATIC")
-                  << " \"${LIBRARY_SRC}\")\n";
-        cmakelist << "# you may add more dependencies' header dir here\n";
-        cmakelist << "target_include_directories(${PROJECT_NAME}\n"
-                  << "    PUBLIC\n"
-                  << "        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/" << ctx.repo_name << ">\n"
-                  << "        $<INSTALL_INTERFACE:" << ctx.repo_name << ">\n"
-                  << "    PRIVATE\n"
-                  << "        ${PROJECT_SOURCE_DIR}/src)\n\n";
+        cmakelist << fmt::format(R"(
+file(GLOB_RECURSE LIBRARY_SRC "{0}/*.cpp")
+add_library(${{PROJECT_NAME}}
+    {1}
+        ${{LIBRARY_SRC}})
+target_include_directories(${{PROJECT_NAME}}
+    PUBLIC
+        $<BUILD_INTERFACE:${{PROJECT_SOURCE_DIR}}/{0}>
+        $<INSTALL_INTERFACE:{0}>
+    PRIVATE
+        ${{PROJECT_SOURCE_DIR}}/src)
+)",
+            ctx.repo_name, (ctx.repo_type == RepoType::SHARED ? "SHARED" : "STATIC"));
     }
 
     // link example
@@ -58,6 +61,16 @@ project({1}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         Threads::Threads)
+
+# edit the cxx standard as you wish
+target_compile_features(${PROJECT_NAME}
+    PUBLIC
+        cxx_std_11)
+
+# this option saves a lot of time and brains
+target_compile_options(${PROJECT_NAME}
+    PUBLIC
+        "-Wfatal-errors")
 )";
 
     // install
@@ -75,8 +88,7 @@ install(TARGETS ${{PROJECT_NAME}}
     if (RepoType::EXECUTABLE != ctx.repo_type)
     {
         cmakelist << fmt::format(R"(# install public headers
-set(PUBLIC_HEADER_DIR ${{PROJECT_SOURCE_DIR}}/{})
-install(DIRECTORY ${{PUBLIC_HEADER_DIR}}
+install(DIRECTORY ${{PROJECT_SOURCE_DIR}}/{}
     DESTINATION ${{CMAKE_INSTALL_INCLUDEDIR}}
     FILES_MATCHING
         PATTERN "*.h"
@@ -90,7 +102,8 @@ install(DIRECTORY ${{PUBLIC_HEADER_DIR}}
     FILE {1}-config.cmake
     NAMESPACE {1}::
     DESTINATION cmake)
-    include(CMakePackageConfigHelpers)
+
+include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     "{1}-config-version.cmake"
     COMPATIBILITY SameMajorVersion)
@@ -253,10 +266,10 @@ const char *GetVersionString()
 
     if (RepoType::EXECUTABLE == ctx.repo_type)
     {
-        std::ofstream helloworld(fmt::format("{}/main.cpp", ctx.repo_name));
+        std::ofstream helloworld(fmt::format("main.cpp", ctx.repo_name));
         if (!helloworld)
         {
-            LOGERR("failed to open file: {}/main.cpp", ctx.repo_name);
+            LOGERR("failed to open file: main.cpp", ctx.repo_name);
         }
         helloworld << fmt::format(R"(#include <iostream>
 #include "{0}.h"
@@ -280,15 +293,14 @@ int main(int argc, char** argv)
 #define {0}_VERSION_MAJOR 0
 #define {0}_VERSION_MINOR 0
 #define {0}_VERSION_PATCH 1
-const char* GetVersionString();)",
-        upper_name);
-    header << R"(
+const char* GetVersionString();
 // if you want auto versioning feature, you can rename this file as {0}.h.in
 // replace the version number to "@{0}_VERSION_MAJOR@" , etc.
 // then add `configure_file({0}.h.in {0}.h @ONLY)` in your CMakeLists.txt
 // CMake will replace the "@{0}_VERSION_MAJOR@" string with the actual version number
-// and generate the {0}.h file in ${CMAKE_BINARY_DIR}
-)";
+// and generate the {0}.h file in ${{CMAKE_BINARY_DIR}}
+)",
+        upper_name);
 
     LOGINFO("{} written complete!", header_name);
 }

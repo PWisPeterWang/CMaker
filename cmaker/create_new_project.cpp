@@ -27,8 +27,6 @@ void CreateNewProject()
     {
         LOGINFO("creating repo for static library: {}", ctx.repo_name);
     }
-    // has default value = 11
-    ctx.cxx_std = vm["std"].as<std::string>();
     // has default value = MIT
     ctx.license = vm["license"].as<std::string>();
 
